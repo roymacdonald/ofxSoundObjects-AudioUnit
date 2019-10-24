@@ -1,0 +1,5 @@
+ofxAudioFile
+ofxAudioUnit
+ofxGui
+ofxSoundObjects
+ofxSoundObjects-AudioUnit
