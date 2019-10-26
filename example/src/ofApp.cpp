@@ -1,12 +1,9 @@
 #include "ofApp.h"
-
+#include "ofxAUSoundObjectUtils.h"
 //--------------------------------------------------------------
 void ofApp::setup(){
 	
-	reverb.setup('aufx', 'mrev', 'appl');
 	
-	
-	player.load( ofToDataPath("../../../../../examples/sound/soundPlayerExample/bin/data/sounds/beat.wav",true),false);
 	ofxSoundUtils::printOutputSoundDevices();
 	
 	auto outDevices = ofxSoundUtils::getOutputSoundDevices();
@@ -18,17 +15,23 @@ void ofApp::setup(){
 	
 	int outDeviceIndex = 0;
 	
+	string soundFile =  ofToDataPath("../../../../../examples/sound/soundPlayerExample/bin/data/sounds/beat.wav",true);
+//	string soundFile = "/Users/roy/Desktop/ramp.wav";
+	OFXplayer.load(soundFile,false);
+	
 	
 	ofSoundStreamSettings soundSettings;
 	soundSettings.numInputChannels = 0;
 	soundSettings.numOutputChannels = 2;
-	soundSettings.sampleRate = player.getSoundFile().getSampleRate();
+	soundSettings.sampleRate = OFXplayer.getSoundFile().getSampleRate();
 	soundSettings.bufferSize = 256;
 	soundSettings.numBuffers = 1;
+	soundSettings.setOutDevice(outDevices[outDeviceIndex]);
 	
-	stream.setup(soundSettings);
+	OFstream.setup(soundSettings);
 	
-	stream.setOutput(output);
+	OFstream.setOutput(OFXoutput);
+	
 	
 	// ------ waveforms ---------
 	// the waveformDraw class setup receives the rectangle where it is going to be drawn
@@ -36,37 +39,147 @@ void ofApp::setup(){
 	// As well, the waveformDraw class inherits from ofRectangle so you can access the functions of the latter.
 	
 	
-	fullFileWaveform.setup( 0, 0, ofGetWidth(), ofGetHeight()/3);
-	wave.setup(0, fullFileWaveform.getMaxY(), ofGetWidth(), ofGetHeight() - fullFileWaveform.getMaxY());
+	OFXfullFileWaveform.setup( 0, 0, ofGetWidth(), ofGetHeight()/3);
+	OFXwave.setup(0, OFXfullFileWaveform.getMaxY(), ofGetWidth(), ofGetHeight()/3);
 	
-	fullFileWaveform.makeMeshFromBuffer( player.getSoundFile().getBuffer());
+	OFXfullFileWaveform.makeMeshFromBuffer( OFXplayer.getSoundFile().getBuffer());
 	
-	
-	connectAU();
-	
-	player.play();
+	fromAU.setName("fromAU");
+	toAU.setName("toAU");
 	
 	
-	player.setLoop(true);
+	AUreverb.setup('aufx', 'mrev', 'appl');
 	
 	
-}
-//--------------------------------------------------------------
-void ofApp::connectAU(){
-	player.connectTo(toAU);
+	OFXplayer.play();
+	OFXplayer.setLoop(true);
 	
-	toAU.connectToAU(reverb).connectTo(fromAU);
 	
-	fromAU.connectTo(wave).connectTo(output);
+	AUfilePlayer.name = "AUfilePlayer";
+	AUtap.name = "AUtap";
+	AUoutput.name = "AUoutput";
+	AUreverb.name = "AUreverb";
+	
+	OFXoutput.setName("OFXoutput");
+	OFXplayer.setName("OFXplayer");
+	OFXwave.setName("OFXwave");
+	OFXfullFileWaveform.setName("OFXfullFileWaveform");
+	fromAU.setName("fromAU");
+	toAU.setName("toAU");
+	
+	cout << "...................." << endl;
+	cout << AUfilePlayer.getName() << endl;
+	cout << AUtap.getName() << endl;
+	cout << AUoutput.getName() << endl;
+	cout << AUreverb.getName() << endl;
+	cout << OFXoutput.getName() << endl;
+	cout << OFXplayer.getName() << endl;
+	cout << OFXwave.getName() << endl;
+	cout << OFXfullFileWaveform.getName() << endl;
+	cout << fromAU.getName() << endl;
+	cout << toAU.getName() << endl;
+	cout << "...................." << endl;
 	
 
-}
-//--------------------------------------------------------------
-void ofApp::disconnectAU(){
-	player.connectTo(wave).connectTo(output);
 	
+	
+	
+	AUfilePlayer.setFile(soundFile);
+	AUfilePlayer.loop();
+	AUfilePlayer.play();
+
+	
+	
+	setMode(OFX_TO_AU);
 
 }
+
+//--------------------------------------------------------------
+void ofApp::setMode( Mode newMode){
+	if(newMode != mode){
+		mode = newMode;
+		
+		status = modeToString();
+		if( mode == OFX_TO_AU){
+			AUoutput.start();
+			OFstream.stop();
+			AUfilePlayer.stop();
+			AUfilePlayer.play();
+			OFXplayer.connectTo(OFXwave).connectTo(toAU);
+			
+			toAU.connectToAU(AUtap).connectTo(AUoutput);
+			
+			string chain;
+			ofxSoundUtils::getSignalChainString(&AUoutput, chain);
+			status += "\n" + chain;
+//			status += " : OFXPlayer >> AUReverb >> AUoutput";
+
+		}
+		else if( mode == OFX_TO_OFX){
+			AUoutput.stop();
+			OFstream.start();
+			OFXplayer.connectTo(OFXwave).connectTo(OFXoutput);
+//			status += " : OFXplayer >> OFXwave >> OFXoutput";
+			string chain;
+			ofxSoundUtils::getSignalChainString(&OFXoutput, chain);
+			status += "\n" + chain;
+		}
+		else if( mode == AU_TO_AU){
+			AUoutput.start();
+			OFstream.stop();
+			AUfilePlayer.connectTo(AUtap).connectTo(AUoutput);
+			AUfilePlayer.stop();
+			AUfilePlayer.play();
+//			status += " : AUfilePlayer >> AUreverb >> AUoutput";
+			
+			string chain;
+			ofxSoundUtils::getSignalChainString(&AUoutput, chain);
+			status += "\n" + chain;
+		}
+		else if( mode == AU_TO_OFX){
+			AUoutput.stop();
+			OFstream.start();
+			AUfilePlayer.connectTo(fromAU);
+			
+			fromAU.connectTo(OFXwave).connectTo(OFXoutput);
+			
+//			status += " : AUfilePlayer >> OFXwave >> OFXoutput";
+			string chain;
+			ofxSoundUtils::getSignalChainString(&OFXoutput, chain);
+			status += "\n" + chain;
+		}
+		else if( mode == OFX_TO_AU_TO_OFX){
+			AUoutput.stop();
+			OFstream.start();
+			
+			OFXplayer.connectTo(toAU);
+			
+			toAU.connectToAU(AUtap).connectTo(fromAU);
+			
+			fromAU.connectTo(OFXwave).connectTo(OFXoutput);
+//			status += " : OFXplayer >> toAU >> AUtap >> fromAU >> OFXwave >> OFXoutput; ";
+			string chain;
+			ofxSoundUtils::getSignalChainString(&OFXoutput, chain);
+			status += "\n" + chain;
+		}
+		else if( mode == AU_TO_OFX_TO_AU){
+			AUoutput.start();
+			OFstream.stop();
+			AUfilePlayer.connectTo(fromAU);
+			fromAU.connectTo(OFXwave).connectTo(toAU);
+			toAU.connectToAU(AUtap).connectTo(AUoutput);
+			string chain;
+			ofxSoundUtils::getSignalChainString(&AUoutput, chain);
+			status += "\n" + chain;
+			
+//			status += " : AUfilePlayer >> fromAU >> OFXwave >> toAU >> AUoutput";
+		}
+		
+		cout << "setMode " << status << endl;
+	}
+
+}
+
 //--------------------------------------------------------------
 void ofApp::update(){
 
@@ -76,29 +189,59 @@ void ofApp::update(){
 void ofApp::draw(){
 	ofSetColor(ofColor::white);
 	
-	fullFileWaveform.draw();
+	OFXfullFileWaveform.draw();
 	
 	ofSetColor(ofColor::red);
-	float playhead = ofMap(player.getPosition(), 0,1, fullFileWaveform.getMinX(),fullFileWaveform.getMaxX());
-	ofDrawLine(playhead, 0, playhead, fullFileWaveform.getMaxY());
+	float playhead = ofMap(OFXplayer.getPosition(), 0,1, OFXfullFileWaveform.getMinX(),OFXfullFileWaveform.getMaxX());
+	ofDrawLine(playhead, 0, playhead, OFXfullFileWaveform.getMaxY());
 	
-	if(fullFileWaveform.inside(ofGetMouseX(), ofGetMouseY())){
+	if(OFXfullFileWaveform.inside(ofGetMouseX(), ofGetMouseY())){
 		ofSetColor(ofColor::cyan);
-		ofDrawLine(ofGetMouseX(), 0, ofGetMouseX(), fullFileWaveform.getMaxY());
+		ofDrawLine(ofGetMouseX(), 0, ofGetMouseX(), OFXfullFileWaveform.getMaxY());
 	}
 	ofSetColor(ofColor::white);
-	wave.draw();
+
 	
+	OFXwave.draw();
+	
+	
+	ofPushStyle();
 	ofSetColor(ofColor::yellow);
-	player.drawDebug(20, gui.getShape().getMaxY() + 20);
+	ofSetLineWidth(3);
+	ofPushMatrix();
+	
+	ofTranslate(0, 2* ofGetHeight()/3);
+	ofPolyline p;
+	AUtap.getWaveform(p, ofGetWidth(), ofGetHeight()/3);
+	p.draw();
+	
+	ofPopMatrix();
+	ofPopStyle();
+	
+	
+	ofDrawBitmapStringHighlight(status, 20,20);
+	
+	
+//	if(mode == AU_TO_AU || mode == AU_TO_OFX || mode == AU_TO_OFX_TO_AU){
+	
+		ofDrawBitmapStringHighlight(timeStampToString(AUtap.getCurrentTimeStamp()), 20, 60);
+		
+		
+		
+//	}
+//	
+
+	
 	
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-	if(key == ' ') reverb.showUI();
-	if(key == 'c') connectAU();
-	if(key == 'd') disconnectAU();
+	if(key == ' ') AUreverb.showUI();
+	if(key >= '1' && key <= '6'){
+		cout << (char)key << endl;
+		setMode((Mode) (key - '1') );
+	}
 }
 
 //--------------------------------------------------------------
@@ -123,8 +266,8 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-	if(fullFileWaveform.inside(x, y)){
-		player.setPositionMS(ofMap(x, fullFileWaveform.getMinX(), fullFileWaveform.getMaxX(), 0, player.getDurationMS()));
+	if(OFXfullFileWaveform.inside(x, y)){
+		OFXplayer.setPositionMS(ofMap(x, OFXfullFileWaveform.getMinX(), OFXfullFileWaveform.getMaxX(), 0, OFXplayer.getDurationMS()));
 	}
 }
 
