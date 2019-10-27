@@ -67,86 +67,72 @@ void ofApp::setup(){
 	fromAU.setName("fromAU");
 	toAU.setName("toAU");
 	
-	cout << "...................." << endl;
-	cout << AUfilePlayer.getName() << endl;
-	cout << AUtap.getName() << endl;
-	cout << AUoutput.getName() << endl;
-	cout << AUreverb.getName() << endl;
-	cout << OFXoutput.getName() << endl;
-	cout << OFXplayer.getName() << endl;
-	cout << OFXwave.getName() << endl;
-	cout << OFXfullFileWaveform.getName() << endl;
-	cout << fromAU.getName() << endl;
-	cout << toAU.getName() << endl;
-	cout << "...................." << endl;
-	
-
-	
 	
 	
 	AUfilePlayer.setFile(soundFile);
 	AUfilePlayer.loop();
-	AUfilePlayer.play();
 
 	
-	
-	setMode(OFX_TO_AU);
+	makeHelpText();
+	setMode(AU_TO_OFX_TO_AU);
 
 }
 
+//--------------------------------------------------------------
+void ofApp::makeHelpText(){
+	helpText.resize(NUM_MODES+1);
+	helpText[0] = " press [key]  ";
+	for(int i =0; i < helpText.size()-1; i++){
+		helpText[i+1] = "       [" + ofToString(i+1) + "] " + modeToString((Mode)i);
+	}
+}
 //--------------------------------------------------------------
 void ofApp::setMode( Mode newMode){
 	if(newMode != mode){
 		mode = newMode;
 		
-		status = modeToString();
 		if( mode == OFX_TO_AU){
 			AUoutput.start();
 			OFstream.stop();
-			AUfilePlayer.stop();
-			AUfilePlayer.play();
+
 			OFXplayer.connectTo(OFXwave).connectTo(toAU);
 			
 			toAU.connectToAU(AUtap).connectTo(AUoutput);
 			
-			string chain;
+			chain = "";
 			ofxSoundUtils::getSignalChainString(&AUoutput, chain);
-			status += "\n" + chain;
-//			status += " : OFXPlayer >> AUReverb >> AUoutput";
 
 		}
 		else if( mode == OFX_TO_OFX){
 			AUoutput.stop();
 			OFstream.start();
 			OFXplayer.connectTo(OFXwave).connectTo(OFXoutput);
-//			status += " : OFXplayer >> OFXwave >> OFXoutput";
-			string chain;
+
+			chain = "";
 			ofxSoundUtils::getSignalChainString(&OFXoutput, chain);
-			status += "\n" + chain;
 		}
 		else if( mode == AU_TO_AU){
 			AUoutput.start();
 			OFstream.stop();
+			AUfilePlayer.loop();
+
 			AUfilePlayer.connectTo(AUtap).connectTo(AUoutput);
-			AUfilePlayer.stop();
-			AUfilePlayer.play();
-//			status += " : AUfilePlayer >> AUreverb >> AUoutput";
-			
-			string chain;
+
+			chain = "";
 			ofxSoundUtils::getSignalChainString(&AUoutput, chain);
-			status += "\n" + chain;
 		}
 		else if( mode == AU_TO_OFX){
 			AUoutput.stop();
 			OFstream.start();
-			AUfilePlayer.connectTo(fromAU);
+			
+			AUfilePlayer.loop();
+			AUfilePlayer.connectTo(AUtap).connectTo(fromAU);
 			
 			fromAU.connectTo(OFXwave).connectTo(OFXoutput);
 			
-//			status += " : AUfilePlayer >> OFXwave >> OFXoutput";
-			string chain;
+			chain = "";
 			ofxSoundUtils::getSignalChainString(&OFXoutput, chain);
-			status += "\n" + chain;
+
 		}
 		else if( mode == OFX_TO_AU_TO_OFX){
 			AUoutput.stop();
@@ -154,28 +140,38 @@ void ofApp::setMode( Mode newMode){
 			
 			OFXplayer.connectTo(toAU);
 			
-			toAU.connectToAU(AUtap).connectTo(fromAU);
+			toAU.connectToAU(AUreverb);
+			
+			AUreverb.connectTo(AUtap);
+
+			AUtap.connectTo(fromAU);
+			
 			
 			fromAU.connectTo(OFXwave).connectTo(OFXoutput);
-//			status += " : OFXplayer >> toAU >> AUtap >> fromAU >> OFXwave >> OFXoutput; ";
-			string chain;
+
+			chain = "";
 			ofxSoundUtils::getSignalChainString(&OFXoutput, chain);
-			status += "\n" + chain;
+
 		}
 		else if( mode == AU_TO_OFX_TO_AU){
-			AUoutput.start();
 			OFstream.stop();
-			AUfilePlayer.connectTo(fromAU);
-			fromAU.connectTo(OFXwave).connectTo(toAU);
-			toAU.connectToAU(AUtap).connectTo(AUoutput);
-			string chain;
-			ofxSoundUtils::getSignalChainString(&AUoutput, chain);
-			status += "\n" + chain;
+			AUoutput.start();
 			
-//			status += " : AUfilePlayer >> fromAU >> OFXwave >> toAU >> AUoutput";
+			AUfilePlayer.loop();
+			
+			AUfilePlayer.connectTo(AUtap).connectTo(fromAU);
+			
+			fromAU.connectTo(OFXwave).connectTo(toAU);
+			
+			toAU.connectToAU(AUoutput);
+
+			
+			chain = "";
+			ofxSoundUtils::getSignalChainString(&AUoutput, chain);
 		}
 		
-		cout << "setMode " << status << endl;
+		cout << "setMode " << mode << "  " << modeToString(mode) << endl;
+		cout << chain << endl;
 	}
 
 }
@@ -184,9 +180,29 @@ void ofApp::setMode( Mode newMode){
 void ofApp::update(){
 
 }
-
+//--------------------------------------------------------------
+void ofApp::drawHelpText(){
+	ofDrawBitmapStringHighlight(chain, 20,20);
+	
+	
+//		ofDrawBitmapStringHighlight(, 20, 40
+	int y = 58;
+	
+	for(int i = 0; i < helpText.size(); i++){
+		ofDrawBitmapStringHighlight(helpText[i], 20, y, (i==(mode + 1))?ofColor::red:ofColor::black, (i==(mode + 1))?ofColor::black:ofColor::white);
+		
+		y += 18;
+		
+	}
+	
+	
+	
+	ofDrawBitmapStringHighlight(timeStampToString(AUtap.getCurrentTimeStamp()), 20, y);
+	
+}
 //--------------------------------------------------------------
 void ofApp::draw(){
+	ofBackground(60);
 	ofSetColor(ofColor::white);
 	
 	OFXfullFileWaveform.draw();
@@ -219,19 +235,21 @@ void ofApp::draw(){
 	ofPopStyle();
 	
 	
-	ofDrawBitmapStringHighlight(status, 20,20);
+	drawHelpText();
+	
+	stringstream ss;
+	ss << "OFXplayer: " << OFXplayer.getTicks()
+	<< "  OFXwave: " << OFXwave.getTicks()
+	<< "  OFXoutput: " << OFXoutput.getTicks() << endl 
+	
+	<< " AUfilePlayer: " << AUfilePlayer.getTicks()
+	<< " AUtap: " << AUtap.getTicks()
+	<< " AUoutput: " << AUoutput.getTicks()
+	<< " AUreverb: " << AUreverb.getTicks();
 	
 	
-//	if(mode == AU_TO_AU || mode == AU_TO_OFX || mode == AU_TO_OFX_TO_AU){
 	
-		ofDrawBitmapStringHighlight(timeStampToString(AUtap.getCurrentTimeStamp()), 20, 60);
-		
-		
-		
-//	}
-//	
-
-	
+	ofDrawBitmapStringHighlight(ss.str(), 20, ofGetHeight() - 60, ofColor::yellow, ofColor::black);
 	
 }
 

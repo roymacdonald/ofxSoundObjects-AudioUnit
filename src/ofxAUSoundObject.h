@@ -6,19 +6,14 @@
 
 #include "ofxAudioBufferHelper.h"
 
-OSStatus RenderToOf(void * inRefCon,
+OSStatus RenderOFtoAU(void * inRefCon,
 					   AudioUnitRenderActionFlags * ioActionFlags,
 					   const AudioTimeStamp * inTimeStamp,
 					   UInt32 inBusNumber,
 					   UInt32 inNumberFrames,
 					   AudioBufferList * ioData);
 
-OSStatus RenderFromOf(void * inRefCon,
-					 AudioUnitRenderActionFlags * ioActionFlags,
-					 const AudioTimeStamp * inTimeStamp,
-					 UInt32 inBusNumber,
-					 UInt32 inNumberFrames,
-					 AudioBufferList * ioData);
+
 
 
 //--------------------------------------------------------------------------
@@ -36,21 +31,15 @@ public:
 	virtual void audioOut(ofSoundBuffer &output) override;
 	
 	
-	OSStatus RenderToOf(AudioUnitRenderActionFlags * ioActionFlags,
+	OSStatus renderToAU(AudioUnitRenderActionFlags * ioActionFlags,
 								   const AudioTimeStamp * inTimeStamp,
 								   UInt32 inBusNumber,
 								   UInt32 inNumberFrames,
 								   AudioBufferList * ioData);
 	
-	OSStatus RenderFromOf(AudioUnitRenderActionFlags * ioActionFlags,
-						const AudioTimeStamp * inTimeStamp,
-						UInt32 inBusNumber,
-						UInt32 inNumberFrames,
-						AudioBufferList * ioData);
-	
 	
 	using ofxSoundObject::connectTo ;
-//	using ofxSoundObject::getName;
+
 	virtual string getName() override;
 	
 private:
@@ -59,10 +48,8 @@ private:
 	
 	ofSoundBuffer workBuffer;
 	
-	AudioTimeStamp prevTimeStamp;
 
 	ofxAudioBufferHelper abl;
-
 	
 	
 };

@@ -52,7 +52,7 @@ class ofApp : public ofBaseApp{
 	} mode = NUM_MODES;
 	
 
-	string modeToString(){
+	string modeToString(Mode mode){
 		switch(mode){
 			case OFX_TO_AU: return "OFX_TO_AU";
 			case OFX_TO_OFX: return "OFX_TO_OFX";
@@ -68,7 +68,6 @@ class ofApp : public ofBaseApp{
 
 	ofSoundStream OFstream;
 	ofxSoundOutput OFXoutput;
-	
 	ofxSoundPlayerObject OFXplayer;
 	waveformDraw OFXwave;
 	waveformDraw OFXfullFileWaveform;
@@ -76,7 +75,7 @@ class ofApp : public ofBaseApp{
 
 	void setMode( Mode newMode);
 	
-	string status;
+	string chain;
 	
 	string timeStampToString (const AudioTimeStamp& t){
 		stringstream ss;
@@ -99,6 +98,8 @@ class ofApp : public ofBaseApp{
 		return ss.str();
 	
 	}
-	
-	
+
+	vector<string> helpText;
+	void makeHelpText();
+	void drawHelpText();
 };

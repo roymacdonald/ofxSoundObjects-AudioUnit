@@ -30,7 +30,7 @@ OSStatus SilentRenderCallback(void * inRefCon,
 
 
 // ----------------------------------------------------------
-OSStatus RenderToOf(void * inRefCon,
+OSStatus RenderOFtoAU(void * inRefCon,
 							   AudioUnitRenderActionFlags * ioActionFlags,
 							   const AudioTimeStamp * inTimeStamp,
 							   UInt32 inBusNumber,
@@ -41,13 +41,13 @@ OSStatus RenderToOf(void * inRefCon,
 	
 	if(sndObj){
 		
-		return sndObj->RenderToOf(ioActionFlags, inTimeStamp, inBusNumber, inNumberFrames, ioData);
+		return sndObj->renderToAU(ioActionFlags, inTimeStamp, inBusNumber, inNumberFrames, ioData);
 		
 	}
 	
 }
 // ----------------------------------------------------------
-OSStatus ofxSoundObjectAudioUnitBridge::RenderToOf(AudioUnitRenderActionFlags * ioActionFlags,
+OSStatus ofxSoundObjectAudioUnitBridge::renderToAU(AudioUnitRenderActionFlags * ioActionFlags,
 															const AudioTimeStamp * inTimeStamp,
 															UInt32 inBusNumber,
 															UInt32 inNumberFrames,
@@ -58,18 +58,11 @@ OSStatus ofxSoundObjectAudioUnitBridge::RenderToOf(AudioUnitRenderActionFlags * 
 	if(inNumberFrames != workBuffer.getNumFrames() || ioData->mNumberBuffers != workBuffer.getNumChannels()){
 		workBuffer.allocate(inNumberFrames, ioData->mNumberBuffers);
 	}
-//	unsigned int sr = getSourceASBD(inBusNumber).mSampleRate;
-//		 std::cout << "Sample Time: " << inTimeStamp->mSampleTime << " Host Time "  << inTimeStamp->mHostTime <<  std::endl;
-//	if(sr == 0){
-//		sr = inTimeStamp->mSampleTime/inTimeStamp->mHostTime;
-//		sr = round(1000000000 * (inNumberFrames/(float)(inTimeStamp->mHostTime - prevTimeStamp.mHostTime)));
-//		cout << "samplerate " << inTimeStamp->mSampleTime/inTimeStamp->mHostTime << endl;
-//	}
-//	prevTimeStamp = *inTimeStamp;
+
 	
 	workBuffer.setSampleRate(44100);
-	
-	//	ofxSoundUtils::checkBuffers(output, workBuffer);
+	workBuffer.setTickCount(inTimeStamp->mSampleTime/inNumberFrames);
+	setTicks(workBuffer.getTickCount());
 	if(inputObject!=nullptr) {
 		inputObject->audioOut(workBuffer);
 	}
@@ -77,7 +70,6 @@ OSStatus ofxSoundObjectAudioUnitBridge::RenderToOf(AudioUnitRenderActionFlags * 
 	abl.set(ioData);
 	abl.fromOf(workBuffer);
 	
-//	ioData = abl.bufferList;
 	
 	OSStatus status;
 	if(_impl->ctx.processCallback.inputProc) {
@@ -99,6 +91,9 @@ void ofxSoundObjectAudioUnitBridge::audioOut(ofSoundBuffer &output){
 	
 	abl.allocate(output.getNumChannels(), output.getNumFrames());
 	
+	
+//	ofxSoundObject::audioOut(output);
+	
 	OSStatus status;
 	
 	AudioUnitRenderActionFlags ioActionFlags;
@@ -106,7 +101,7 @@ void ofxSoundObjectAudioUnitBridge::audioOut(ofSoundBuffer &output){
 //	cout << getName() << " Tick Count: " << output.getTickCount() << endl;
 	FillOutAudioTimeStampWithSampleAndHostTime(inTimeStamp, output.getTickCount()* output.getNumFrames(), AudioGetCurrentHostTime());
 	
-	
+	setTicks(output.getTickCount());
 	
 	if(_impl->ctx.sourceType == NodeSourceUnit && _impl->ctx.sourceUnit->getUnitRef()) {
 		status = _impl->ctx.sourceUnit->render(&ioActionFlags,
@@ -168,12 +163,13 @@ void ofxSoundObjectAudioUnitBridge::copyToCircBuffer(AudioBufferList * ioData){
 
 // ----------------------------------------------------------
 ofxAudioUnit& ofxSoundObjectAudioUnitBridge::connectToAU(ofxAudioUnit &destination, int destinationBus, int sourceBus){
-	ofxAudioUnitDSPNode::connectTo(destination);
-//	_impl->ctx.sourceBus = sourceBus;
-	AURenderCallbackStruct callback = {RenderToOf, this};
+	
+	_impl->ctx.sourceBus = sourceBus;
+	AURenderCallbackStruct callback = {RenderOFtoAU, this};
 	destination.setRenderCallback(callback, destinationBus);
-	destination.sourceDSP = this;
-	destination.sourceUnit = nullptr;
+	destination.setSourceDSPNode(this);
+	
+
 	return destination;
 }
 // ----------------------------------------------------------
@@ -182,10 +178,9 @@ ofxAudioUnitDSPNode& ofxSoundObjectAudioUnitBridge::connectToAU(ofxAudioUnitDSPN
 	
 	_impl->ctx.sourceUnit = nullptr;
 	_impl->ctx.sourceBus = sourceBus;
-	AURenderCallbackStruct callback = {RenderToOf, this};
+	AURenderCallbackStruct callback = {RenderOFtoAU, this};
 	destination.setSource(callback);
-	destination._impl->ctx.sourceDSPNode = this;
-	destination._impl->ctx.sourceUnit = nullptr;
+	destination.setSourceDSPNode(this);
 	return destination;
 }
 
