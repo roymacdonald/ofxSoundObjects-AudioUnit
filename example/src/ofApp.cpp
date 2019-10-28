@@ -197,7 +197,7 @@ void ofApp::drawHelpText(){
 	
 	
 	
-	ofDrawBitmapStringHighlight(timeStampToString(AUtap.getCurrentTimeStamp()), 20, y);
+//	ofDrawBitmapStringHighlight(timeStampToString(AUtap.getCurrentTimeStamp()), 20, y);
 	
 }
 //--------------------------------------------------------------
@@ -237,19 +237,19 @@ void ofApp::draw(){
 	
 	drawHelpText();
 	
-	stringstream ss;
-	ss << "OFXplayer: " << OFXplayer.getTicks()
-	<< "  OFXwave: " << OFXwave.getTicks()
-	<< "  OFXoutput: " << OFXoutput.getTicks() << endl 
+//	stringstream ss;
+//	ss << "OFXplayer: " << OFXplayer.getTicks()
+//	<< "  OFXwave: " << OFXwave.getTicks()
+//	<< "  OFXoutput: " << OFXoutput.getTicks() << endl 
+//	
+//	<< " AUfilePlayer: " << AUfilePlayer.getTicks()
+//	<< " AUtap: " << AUtap.getTicks()
+//	<< " AUoutput: " << AUoutput.getTicks()
+//	<< " AUreverb: " << AUreverb.getTicks();
 	
-	<< " AUfilePlayer: " << AUfilePlayer.getTicks()
-	<< " AUtap: " << AUtap.getTicks()
-	<< " AUoutput: " << AUoutput.getTicks()
-	<< " AUreverb: " << AUreverb.getTicks();
 	
 	
-	
-	ofDrawBitmapStringHighlight(ss.str(), 20, ofGetHeight() - 60, ofColor::yellow, ofColor::black);
+//	ofDrawBitmapStringHighlight(ss.str(), 20, ofGetHeight() - 60, ofColor::yellow, ofColor::black);
 	
 }
 

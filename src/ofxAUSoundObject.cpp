@@ -62,7 +62,8 @@ OSStatus ofxSoundObjectAudioUnitBridge::renderToAU(AudioUnitRenderActionFlags * 
 	
 	workBuffer.setSampleRate(44100);
 	workBuffer.setTickCount(inTimeStamp->mSampleTime/inNumberFrames);
-	setTicks(workBuffer.getTickCount());
+	
+//	setTicks(workBuffer.getTickCount());
 	if(inputObject!=nullptr) {
 		inputObject->audioOut(workBuffer);
 	}
@@ -101,7 +102,7 @@ void ofxSoundObjectAudioUnitBridge::audioOut(ofSoundBuffer &output){
 //	cout << getName() << " Tick Count: " << output.getTickCount() << endl;
 	FillOutAudioTimeStampWithSampleAndHostTime(inTimeStamp, output.getTickCount()* output.getNumFrames(), AudioGetCurrentHostTime());
 	
-	setTicks(output.getTickCount());
+//	setTicks(output.getTickCount());
 	
 	if(_impl->ctx.sourceType == NodeSourceUnit && _impl->ctx.sourceUnit->getUnitRef()) {
 		status = _impl->ctx.sourceUnit->render(&ioActionFlags,
