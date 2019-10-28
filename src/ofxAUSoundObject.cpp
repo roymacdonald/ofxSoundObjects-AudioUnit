@@ -93,16 +93,14 @@ void ofxSoundObjectAudioUnitBridge::audioOut(ofSoundBuffer &output){
 	abl.allocate(output.getNumChannels(), output.getNumFrames());
 	
 	
-//	ofxSoundObject::audioOut(output);
 	
 	OSStatus status;
 	
 	AudioUnitRenderActionFlags ioActionFlags;
 	AudioTimeStamp inTimeStamp;
-//	cout << getName() << " Tick Count: " << output.getTickCount() << endl;
 	FillOutAudioTimeStampWithSampleAndHostTime(inTimeStamp, output.getTickCount()* output.getNumFrames(), AudioGetCurrentHostTime());
 	
-//	setTicks(output.getTickCount());
+
 	
 	if(_impl->ctx.sourceType == NodeSourceUnit && _impl->ctx.sourceUnit->getUnitRef()) {
 		status = _impl->ctx.sourceUnit->render(&ioActionFlags,
