@@ -65,6 +65,12 @@ class ofApp : public ofBaseApp{
 		return "";
 	} 
 
+	
+	ofxAudioUnit compressor;
+	ofxAudioUnit delay;
+	ofxAudioUnit distortion;
+	ofxAudioUnit filter;
+	
 
 	ofSoundStream OFstream;
 	ofxSoundOutput OFXoutput;

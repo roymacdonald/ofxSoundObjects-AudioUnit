@@ -73,6 +73,14 @@ void ofApp::setup(){
 	AUfilePlayer.loop();
 
 	
+	
+	distortion.setup(kAudioUnitType_Effect, kAudioUnitSubType_Distortion);
+	delay.setup(kAudioUnitType_Effect, kAudioUnitSubType_Delay);
+	filter.setup(kAudioUnitType_Effect, kAudioUnitSubType_LowPassFilter);
+	compressor.setup(kAudioUnitType_Effect, kAudioUnitSubType_DynamicsProcessor);
+	
+	
+	
 	makeHelpText();
 	setMode(AU_TO_OFX_TO_AU);
 
@@ -140,13 +148,22 @@ void ofApp::setMode( Mode newMode){
 			
 			OFXplayer.connectTo(toAU);
 			
+			/// toAU is an ofxSoundObjectAudioUnitBridge object.
+			/// AUreverb is an ofxAudio Unit
 			toAU.connectToAU(AUreverb);
 			
-			AUreverb.connectTo(AUtap);
+			/// you need to split the connectTo into the ofxAudioUnits that are being connected and the ofxSoundObjects.
+			/// so, your connectTo chained calls should be done between ofxSoundObjects only or ofxAudioUnits only, not mixing these.
+			/// The ofxSoundObjectAudioUnitBridge objects are the ones that can connect between ofxSoundObjects and ofxAudioUnits.
+			/// The following line there are only ofxAudioUnit instances.
+			
+			AUreverb.connectTo(compressor).connectTo(delay).connectTo(distortion).connectTo(filter).connectTo(AUtap);
 
+			
+			/// here the AUtap which is an ofxAudioUnit connect to fromAU whis is a ofxSoundObjectAudioUnitBridge which will allow to connect to an ofxSoundObject.
 			AUtap.connectTo(fromAU);
 			
-			
+			//The following line are ofxSoundObjects only
 			fromAU.connectTo(OFXwave).connectTo(OFXoutput);
 
 			chain = "";
@@ -260,6 +277,10 @@ void ofApp::keyPressed(int key){
 		cout << (char)key << endl;
 		setMode((Mode) (key - '1') );
 	}
+	if(key == 'e') delay.showUI();
+	if(key == 'd') distortion.showUI();
+	if(key == 'f') filter.showUI();
+	if(key == 'c') compressor.showUI();
 }
 
 //--------------------------------------------------------------
