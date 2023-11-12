@@ -44,7 +44,7 @@ OSStatus RenderOFtoAU(void * inRefCon,
 		return sndObj->renderToAU(ioActionFlags, inTimeStamp, inBusNumber, inNumberFrames, ioData);
 		
 	}
-	
+    return 0;
 }
 // ----------------------------------------------------------
 OSStatus ofxSoundObjectAudioUnitBridge::renderToAU(AudioUnitRenderActionFlags * ioActionFlags,
