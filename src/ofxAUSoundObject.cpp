@@ -61,8 +61,9 @@ OSStatus ofxSoundObjectAudioUnitBridge::renderToAU(AudioUnitRenderActionFlags * 
 
 	
 	workBuffer.setSampleRate(44100);
+    
 	workBuffer.setTickCount(inTimeStamp->mSampleTime/inNumberFrames);
-	
+    _tickCount = workBuffer.getTickCount();
 //	setTicks(workBuffer.getTickCount());
 	if(inputObject!=nullptr) {
 		inputObject->audioOut(workBuffer);
@@ -89,7 +90,7 @@ OSStatus ofxSoundObjectAudioUnitBridge::renderToAU(AudioUnitRenderActionFlags * 
 }
 // ----------------------------------------------------------
 void ofxSoundObjectAudioUnitBridge::audioOut(ofSoundBuffer &output){
-	
+    _tickCount = output.getTickCount();
 	abl.allocate(output.getNumChannels(), output.getNumFrames());
 	
 	
@@ -130,7 +131,24 @@ void ofxSoundObjectAudioUnitBridge::audioOut(ofSoundBuffer &output){
 											   output.getNumFrames(),
 											   abl.bufferList);
 	}
-	
+    printAudioOut();
+//    if(bPrintAudioOut){
+//        std::stringstream ss;
+//
+//        ss << "ofxSoundObjectAudioUnitBridge::audioOut " << getName();
+//        ss << " status: " << status << "\n";
+//        ss << "     (ofSoundBuffer)output.getNumChannels(): " << output.getNumChannels() << "\n";
+//        ss << "     (ofSoundBuffer)output.getNumFrames(): " << output.getNumFrames() << "\n";
+//        ss << "     (ofSoundBuffer)output.getTickCount: " <<  output.getTickCount() << "\n";
+//        ss << "     abl.bufferList:\n          mNumberBuffers: "<< abl.bufferList->mNumberBuffers << "\n";
+//        for(size_t i = 0; i < abl.bufferList->mNumberBuffers; i++){
+//            ss << "                mBuffers["<< i << "].mDataByteSize: "<< abl.bufferList->mBuffers[i].mDataByteSize << "\n";
+//            ss << "                mBuffers["<< i << "].mNumberChannels: "<< abl.bufferList->mBuffers[i].mNumberChannels << "\n";
+//        }
+//
+//        std::cout << ss.str();
+//    }
+    
 	copyToCircBuffer(abl.bufferList);
 	
 	
@@ -168,7 +186,8 @@ ofxAudioUnit& ofxSoundObjectAudioUnitBridge::connectToAU(ofxAudioUnit &destinati
 	destination.setRenderCallback(callback, destinationBus);
 	destination.setSourceDSPNode(this);
 	
-
+    mode = BRIDGE_MODE_TO_AU;
+    
 	return destination;
 }
 // ----------------------------------------------------------
@@ -180,6 +199,9 @@ ofxAudioUnitDSPNode& ofxSoundObjectAudioUnitBridge::connectToAU(ofxAudioUnitDSPN
 	AURenderCallbackStruct callback = {RenderOFtoAU, this};
 	destination.setSource(callback);
 	destination.setSourceDSPNode(this);
+    
+    mode = BRIDGE_MODE_TO_AU;
+    
 	return destination;
 }
 
